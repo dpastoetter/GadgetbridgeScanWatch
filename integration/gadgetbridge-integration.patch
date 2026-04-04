@@ -1,0 +1,32 @@
+diff --git a/app/src/main/java/nodomain/freeyourgadget/gadgetbridge/model/DeviceType.java b/app/src/main/java/nodomain/freeyourgadget/gadgetbridge/model/DeviceType.java
+index f1f7fc1fb..1407b3088 100644
+--- a/app/src/main/java/nodomain/freeyourgadget/gadgetbridge/model/DeviceType.java
++++ b/app/src/main/java/nodomain/freeyourgadget/gadgetbridge/model/DeviceType.java
+@@ -422,6 +422,7 @@ import nodomain.freeyourgadget.gadgetbridge.devices.vibratissimo.VibratissimoCoo
+ import nodomain.freeyourgadget.gadgetbridge.devices.waspos.WaspOSCoordinator;
+ import nodomain.freeyourgadget.gadgetbridge.devices.lenovo.watch9.Watch9DeviceCoordinator;
+ import nodomain.freeyourgadget.gadgetbridge.devices.withingssteelhr.WithingsSteelHRDeviceCoordinator;
++import nodomain.freeyourgadget.gadgetbridge.devices.withingsscanwatch.WithingsScanWatchDeviceCoordinator;
+ import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.watches.MiBand10Coordinator;
+ import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.watches.MiBand4CCoordinator;
+ import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.watches.MiBand7ProCoordinator;
+@@ -859,6 +860,7 @@ public enum DeviceType {
+     REALME_BUDS_AIR_5_PRO(RealmeBudsAir5ProCoordinator.class),
+     SOFLOW_SO6(SoFlowCoordinator.class),
+     WITHINGS_STEEL_HR(WithingsSteelHRDeviceCoordinator.class),
++    WITHINGS_SCAN_WATCH(WithingsScanWatchDeviceCoordinator.class),
+     SONY_WENA_3(SonyWena3Coordinator.class),
+     FEMOMETER_VINCA2(FemometerVinca2DeviceCoordinator.class),
+     PIXOO(PixooCoordinator.class),
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 464215987..7b8552c3a 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -3489,6 +3489,7 @@
+     <string name="devicetype_onemore_sonoflow" translatable="false">1MORE SonoFlow</string>
+     <string name="devicetype_sony_wena3" translatable="false">Sony Wena 3</string>
+     <string name="devicetype_withings_steel_hr" translatable="false">Withings Steel HR</string>
++    <string name="devicetype_withings_scan_watch" translatable="false">Withings ScanWatch</string>
+     <string name="pref_button_action_disabled">Disabled</string>
+     <string name="pref_media_play">Media Play</string>
+     <string name="pref_media_pause">Media Pause</string>
