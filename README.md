@@ -6,7 +6,7 @@ Self-contained sources plus a small **integration patch** for [Gadgetbridge](htt
 
 | Path | Purpose |
 |------|--------|
-| `module/src/main/java/...` | Device coordinator and BLE support (your main work stays here). |
+| `module/src/main/java/...` | Coordinator, BLE support, and `WithingsScanWatchGatt` UUID constants (Steel-HR family). |
 | `integration/gadgetbridge-integration.patch` | Minimal edits to upstream `DeviceType` and `strings`. |
 | `integration/apply-integration.sh` | Copies Java sources into upstream and applies the patch. |
 | `UPSTREAM_REVISION` | Commit the patch was last validated against (regenerate patch if you rebase). |
@@ -41,6 +41,14 @@ git restore app/src/main/java/nodomain/freeyourgadget/gadgetbridge/model/DeviceT
 rm -rf app/src/main/java/nodomain/freeyourgadget/gadgetbridge/devices/withingsscanwatch
 rm -rf app/src/main/java/nodomain/freeyourgadget/gadgetbridge/service/devices/withingsscanwatch
 ```
+
+Re-running `./integration/apply-integration.sh` on an **already integrated** tree will usually fail at `git apply` (patch already applied). Remove using the steps above first, or `git checkout` those two files before re-applying.
+
+## Reverse engineering (no special build)
+
+With logging enabled in Gadgetbridge, connection attempts will show GATT services/characteristics for the UUIDs registered in `WithingsScanWatchDeviceSupport` (Generic Access/Attribute, Device Information, Battery, and the Steel-HR-family Withings service `00000020-5749-5448-…`). Unknown notifications are logged with a hex dump. Compare with upstream `WithingsSteelHRDeviceSupport` / `WithingsUUID` in [Gadgetbridge](https://codeberg.org/Freeyourgadget/Gadgetbridge).
+
+Optional: Android **Bluetooth HCI snoop** while using the vendor app, then inspect with Wireshark.
 
 ## Publishing on GitHub
 

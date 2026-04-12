@@ -26,7 +26,8 @@ public class WithingsScanWatchDeviceCoordinator extends AbstractBLEDeviceCoordin
             return false;
         }
         final String lower = name.toLowerCase(Locale.ROOT);
-        return lower.contains("scanwatch") || lower.contains("scan watch");
+        return (lower.contains("scanwatch") || lower.contains("scan watch"))
+                || (lower.contains("withings") && lower.contains("scan"));
     }
 
     @Override
