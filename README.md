@@ -11,7 +11,7 @@ Self-contained sources plus a small **integration patch** for [Gadgetbridge](htt
 | `integration/apply-integration.sh` | Copies Java sources into upstream and applies the patch. |
 | `UPSTREAM_REVISION` | Commit the patch was last validated against (regenerate patch if you rebase). |
 
-Gadgetbridge has no dynamic plugin API; the coordinator and support classes must compile inside the main `app` module. The script **copies** (with `rsync` without `--delete`) the add-on Java tree into `app/src/main/java` and applies a tiny diff for registration. Never use `rsync --delete` here: it would wipe the rest of Gadgetbridge’s sources.
+Gadgetbridge has no dynamic plugin API; the coordinator and support classes must compile inside the main `app` module. The script copies only the two ScanWatch packages into `app/src/main/java` (no `--delete`) and applies a tiny diff for registration. It refuses symlinks, non-absolute paths, `host:path` destinations, and a patch that touches anything other than `DeviceType.java` and `strings.xml`.
 
 ## Prerequisites
 
@@ -46,7 +46,7 @@ Re-running `./integration/apply-integration.sh` on an **already integrated** tre
 
 ## Reverse engineering (no special build)
 
-With logging enabled in Gadgetbridge, connection attempts will show GATT services/characteristics for the UUIDs registered in `WithingsScanWatchDeviceSupport` (Generic Access/Attribute, Device Information, Battery, and the Steel-HR-family Withings service `00000020-5749-5448-…`). Unknown notifications are logged with a hex dump. Compare with upstream `WithingsSteelHRDeviceSupport` / `WithingsUUID` in [Gadgetbridge](https://codeberg.org/Freeyourgadget/Gadgetbridge).
+With logging enabled in Gadgetbridge, connection attempts will show GATT services/characteristics for the UUIDs registered in `WithingsScanWatchDeviceSupport` (Generic Access/Attribute, Device Information, Battery, and the Steel-HR-family Withings service `00000020-5749-5448-…`). This add-on logs notification UUID and length only. Gadgetbridge's BLE queue hex-dumps characteristic values at debug. Compare with upstream `WithingsSteelHRDeviceSupport` / `WithingsUUID` in [Gadgetbridge](https://codeberg.org/Freeyourgadget/Gadgetbridge).
 
 Optional: Android **Bluetooth HCI snoop** while using the vendor app, then inspect with Wireshark.
 

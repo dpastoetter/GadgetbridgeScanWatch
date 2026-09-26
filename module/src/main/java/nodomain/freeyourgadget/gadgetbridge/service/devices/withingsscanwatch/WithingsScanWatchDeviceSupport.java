@@ -5,7 +5,7 @@ package nodomain.freeyourgadget.gadgetbridge.service.devices.withingsscanwatch;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +18,6 @@ import nodomain.freeyourgadget.gadgetbridge.service.btle.AbstractBTLESingleDevic
 import nodomain.freeyourgadget.gadgetbridge.service.btle.GattCharacteristic;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.GattService;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.TransactionBuilder;
-import nodomain.freeyourgadget.gadgetbridge.util.GB;
 
 /**
  * BLE scaffold aimed at reverse engineering: registers standard services plus the Withings UUIDs
@@ -27,6 +26,10 @@ import nodomain.freeyourgadget.gadgetbridge.util.GB;
 public class WithingsScanWatchDeviceSupport extends AbstractBTLESingleDeviceSupport {
 
     private static final Logger LOG = LoggerFactory.getLogger(WithingsScanWatchDeviceSupport.class);
+
+    /** Device Information strings are short ASCII; anything longer is not stored or logged. */
+    private static final int MAX_BLE_TEXT_BYTES = 64;
+    private static final int MAX_BLE_TEXT_CHARS = 32;
 
     public WithingsScanWatchDeviceSupport() {
         super(LOG);
@@ -76,24 +79,38 @@ public class WithingsScanWatchDeviceSupport extends AbstractBTLESingleDeviceSupp
         }
         final UUID uuid = characteristic.getUuid();
         if (GattCharacteristic.UUID_CHARACTERISTIC_DEVICE_NAME.equals(uuid)) {
-            if (status == BluetoothGatt.GATT_SUCCESS && value != null) {
-                LOG.info("ScanWatch GAP name: {}", new String(value, StandardCharsets.UTF_8));
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                final String gapName = sanitizeBleText(value);
+                if (gapName != null) {
+                    LOG.info("ScanWatch GAP name: {}", gapName);
+                } else {
+                    LOG.warn("ScanWatch GAP name rejected (len={})", value == null ? 0 : value.length);
+                }
             }
             return true;
         }
         if (GattCharacteristic.UUID_CHARACTERISTIC_FIRMWARE_REVISION_STRING.equals(uuid)) {
-            if (status == BluetoothGatt.GATT_SUCCESS && value != null) {
-                getDevice().setFirmwareVersion(new String(value, StandardCharsets.UTF_8).trim());
-                LOG.info("ScanWatch firmware revision (DIS): {}", getDevice().getFirmwareVersion());
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                final String revision = sanitizeBleText(value);
+                if (revision != null) {
+                    getDevice().setFirmwareVersion(revision);
+                    LOG.info("ScanWatch firmware revision (DIS): {}", revision);
+                } else {
+                    LOG.warn("ScanWatch firmware revision rejected (len={})", value == null ? 0 : value.length);
+                }
             }
             return true;
         }
         if (GattCharacteristic.UUID_CHARACTERISTIC_BATTERY_LEVEL.equals(uuid)) {
-            if (status == BluetoothGatt.GATT_SUCCESS && value != null && value.length > 0) {
+            if (status == BluetoothGatt.GATT_SUCCESS && value != null && value.length == 1) {
                 final int level = value[0] & 0xff;
-                getDevice().setBatteryLevel(level);
-                getDevice().setBatteryVoltage(GBDevice.BATTERY_UNKNOWN);
-                LOG.info("ScanWatch battery level (BAS): {}%", level);
+                if (level <= 100) {
+                    getDevice().setBatteryLevel(level);
+                    getDevice().setBatteryVoltage(GBDevice.BATTERY_UNKNOWN);
+                    LOG.info("ScanWatch battery level (BAS): {}%", level);
+                } else {
+                    LOG.warn("ScanWatch battery level rejected: {}", level);
+                }
             }
             return true;
         }
@@ -109,11 +126,30 @@ public class WithingsScanWatchDeviceSupport extends AbstractBTLESingleDeviceSupp
         if (super.onCharacteristicChanged(gatt, characteristic, value)) {
             return true;
         }
-        logNotify(characteristic.getUuid(), value);
-        return false;
+        final int length = value == null ? 0 : value.length;
+        LOG.debug("ScanWatch notify {} ({} bytes)", characteristic.getUuid(), length);
+        return true;
     }
 
-    private void logNotify(@NonNull final UUID uuid, final byte[] value) {
-        LOG.info("ScanWatch notify {}: {}", uuid, GB.hexdump(value));
+    /**
+     * Keep only short printable ASCII. Firmware and GAP strings are persisted and written to
+     * logs; a spoofed peripheral can otherwise inject newlines or a very large value.
+     */
+    @Nullable
+    static String sanitizeBleText(final byte[] value) {
+        if (value == null || value.length == 0 || value.length > MAX_BLE_TEXT_BYTES) {
+            return null;
+        }
+        final String raw = new String(value, StandardCharsets.UTF_8).trim();
+        if (raw.isEmpty() || raw.length() > MAX_BLE_TEXT_CHARS) {
+            return null;
+        }
+        for (int i = 0; i < raw.length(); i++) {
+            final char c = raw.charAt(i);
+            if (c < 0x20 || c > 0x7e) {
+                return null;
+            }
+        }
+        return raw;
     }
 }

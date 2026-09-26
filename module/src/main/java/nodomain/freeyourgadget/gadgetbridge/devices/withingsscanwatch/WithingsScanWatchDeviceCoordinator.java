@@ -19,15 +19,34 @@ import nodomain.freeyourgadget.gadgetbridge.service.devices.withingsscanwatch.Wi
  */
 public class WithingsScanWatchDeviceCoordinator extends AbstractBLEDeviceCoordinator {
 
+    /** BLE local names are short; longer values are not a ScanWatch advertisement. */
+    private static final int MAX_ADVERTISED_NAME_CHARS = 40;
+
+    /**
+     * Match ScanWatch names only. The previous {@code withings && scan} rule also selected
+     * Withings Body Scan, which is a scale. Names are attacker-controlled advertisements, so
+     * control characters and oversized names are rejected before they reach the device list.
+     */
     @Override
     public boolean supports(final GBDeviceCandidate candidate) {
-        final String name = candidate.getName();
-        if (name == null) {
+        return isScanWatchName(candidate.getName());
+    }
+
+    static boolean isScanWatchName(final String name) {
+        if (name == null || name.length() > MAX_ADVERTISED_NAME_CHARS) {
             return false;
         }
+        for (int i = 0; i < name.length(); i++) {
+            final char c = name.charAt(i);
+            if (c < 0x20 || c > 0x7e) {
+                return false;
+            }
+        }
         final String lower = name.toLowerCase(Locale.ROOT);
-        return (lower.contains("scanwatch") || lower.contains("scan watch"))
-                || (lower.contains("withings") && lower.contains("scan"));
+        if (lower.contains("body")) {
+            return false;
+        }
+        return lower.contains("scanwatch") || lower.contains("scan watch");
     }
 
     @Override
